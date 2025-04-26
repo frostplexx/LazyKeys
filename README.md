@@ -22,7 +22,13 @@ lazykeys = {
     url = "github:frostplexx/lazykeys";
 };
 ```
-to your inputs. Then enable the service using the following snippet in your `configruation.nix`:
+to your inputs. Thenn add the nix module
+```nix
+modules = [
+    inputs.lazykeys.darwinModules.default
+];
+```
+Lastly enable the service using the following snippet in your `configruation.nix`:
 ```nix
 services.lazykeys = {
     enable = true;
