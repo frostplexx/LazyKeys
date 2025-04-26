@@ -20,8 +20,6 @@ Add
 ```nix
 lazykeys = {
     url = "github:frostplexx/lazykeys";
-    # or for local development:
-    # url = "path:/Users/daniel/Developer/nixkit";
 };
 ```
 to your inputs. Then enable the service using the following snippet in your `configruation.nix`:
