@@ -3,8 +3,8 @@ import Cocoa
 class AppDelegate: NSObject, NSApplicationDelegate {
     private var hyperKey: HyperKey?
     private var statusItem: NSStatusItem?
-// Use VERSION_STRING from version.h
-let version = String(cString: VERSION_STRING)
+    let version = String(cString: VERSION_STRING)
+
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         var normalQuickPress = true
@@ -47,12 +47,10 @@ let version = String(cString: VERSION_STRING)
     }
 }
 
-// Main function that starts the application
 func main() {
     let delegate = AppDelegate()
     NSApplication.shared.delegate = delegate
     NSApplication.shared.run()
 }
 
-// Call main to start the app
 main()
