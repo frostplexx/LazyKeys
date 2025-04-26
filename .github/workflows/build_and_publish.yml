@@ -1,0 +1,70 @@
+name: Build and Publish LazyKeys
+
+on:
+  push:
+    tags:
+      - "v*"  # Trigger workflow on version tags (e.g., v1.0.0)
+
+jobs:
+  build:
+    runs-on: macos-latest
+
+    steps:
+      # Checkout the repository
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      # Set up Swift environment
+      - name: Set up Swift
+        uses: actions/setup-swift@v2
+        with:
+          swift-version: '5.7'
+
+      # Install Make (if not already installed)
+      - name: Install Make
+        run: |
+          brew install make
+
+      # Get the version from Git
+      - name: Get version from Git
+        id: get_version
+        run: |
+          VERSION=$(git describe --tags --abbrev=0 || git rev-parse --short HEAD)
+          echo "VERSION=${VERSION}" >> $GITHUB_ENV
+          echo "Version set to $VERSION"
+
+      # Build the app using Make with the version passed as a compile-time variable
+      - name: Build the app with Make
+        run: |
+          make VERSION="${{ env.VERSION }}" build
+
+      # Create a tarball for the release
+      - name: Create tarball
+        run: |
+          mkdir -p release
+          tar -czf release/hyperkey.tar.gz -C bin hyperkey
+
+      # Publish the release on GitHub
+      - name: Create GitHub Release
+        uses: gh-actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: "Release ${{ github.ref }}"
+          body: "Release version ${{ github.ref }}"
+          files: release/hyperkey.tar.gz
+
+      # Update Homebrew Formula
+      - name: Update Homebrew Formula
+        run: |
+          VERSION=${{ env.VERSION }}
+          FORMULA_PATH=Formula/hyperkey.rb
+          TAR_URL="https://github.com/${{ github.repository }}/releases/download/${{ github.ref }}/hyperkey.tar.gz"
+
+          # Update the formula with the new version and URL
+          sed -i '' "s/^  url .*/  url \"${TAR_URL}\"/" $FORMULA_PATH
+          sed -i '' "s/^  sha256 .*/  sha256 \"$(shasum -a 256 release/hyperkey.tar.gz | awk '{print $1}')\"/" $FORMULA_PATH
+          git add $FORMULA_PATH
+          git commit -m "Update formula for version $VERSION"
+          git push origin main
