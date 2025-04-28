@@ -1,6 +1,7 @@
 # LazyKeys
 
 [![GitHub Release](https://img.shields.io/github/v/release/frostplexx/LazyKeys)](https://github.com/frostplexx/LazyKeys/releases)
+[![Build and Publish LazyKeys](https://github.com/frostplexx/LazyKeys/actions/workflows/build_and_publish.yml/badge.svg)](https://github.com/frostplexx/LazyKeys/actions/workflows/build_and_publish.yml)
 [![Homebrew](https://img.shields.io/badge/homebrew-available-blue)](https://github.com/frostplexx/lazykeys)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
