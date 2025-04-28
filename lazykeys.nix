@@ -9,7 +9,7 @@ lazykeys = pkgs.stdenv.mkDerivation {
 
   src = pkgs.fetchurl {
       url = "https://github.com/frostplexx/LazyKeys/releases/download/v1.0.0/lazykeys.tar.gz";
-      hash = "sha256-GyruQ1Vs3G/ZCqOMFeWAWPs0ZmhPdVA0BrQgiScOhck=";
+      hash = "sha256-Lq09N7eaZrkG+iwfsOwRaMbJPh48lw2kRRrPJGbYFVI=";
   };
 
 
