@@ -21,7 +21,7 @@ version.h:
 build: version.h $(OUTPUT)
 
 $(OUTPUT): $(SRC_FILES) | $(BIN_DIR)
-	swiftc -I. -import-objc-header version.h \
+	xcrun swiftc -I. -import-objc-header version.h \
 		-O \
 		$(LIBS) \
 		$(SRC_FILES) \
