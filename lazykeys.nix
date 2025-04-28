@@ -12,8 +12,6 @@ lazykeys = pkgs.stdenv.mkDerivation {
       hash = "sha256-5b5b2eba01e142e63c7e218fb0c36915077addae0b7a035bc85f1b2520a06966";
   };
 
-  dontUnpack = true;
-
   installPhase = ''
     runHook preInstall
     mkdir -p $out/bin

@@ -102,20 +102,22 @@ jobs:
       - name: Update lazykeys.nix
         run: |
           NIX_FILE=lazykeys.nix
+          TARBALL=release/lazykeys.tar.gz
           if [ -f "$NIX_FILE" ]; then
-            # Update the version
-            sed -i '' "s|^[[:space:]]*version = \".*\";|  version = \"v0.0.1\";|" $NIX_FILE
-            sed -i '' "s|^[[:space:]]*url = \".*\";|      url = \"https://github.com/frostplexx/LazyKeys/releases/download/v0.0.1/lazykeys.tar.gz\";|" $NIX_FILE
-            sed -i '' "s|^[[:space:]]*hash = \".*\";|      hash = \"sha256-5b5b2eba01e142e63c7e218fb0c36915077addae0b7a035bc85f1b2520a06966\";|" $NIX_FILE
+            # Calculate the SRI sha256 hash
+            new_sha256=$(nix hash to-sri --type sha256 "$TARBALL")
+            
+            # Update version, URL, and hash
+            sed -i '' "s|^[[:space:]]*version = \".*\";|  version = \"${{ env.VERSION }}\";|" "$NIX_FILE"
+            sed -i '' "s|^[[:space:]]*url = \".*\";|      url = \"https://github.com/${{ github.repository }}/releases/download/${{ env.VERSION }}/lazykeys.tar.gz\";|" "$NIX_FILE"
+            sed -i '' "s|^[[:space:]]*hash = \".*\";|      hash = \"${new_sha256}\";|" "$NIX_FILE"
       
             # Configure Git
             git config --local user.email "action@github.com"
             git config --local user.name "GitHub Action"
       
-            # Stage the changes
-            git add $NIX_FILE
-            
-            # Only commit if there are changes
+            # Stage and commit if there are changes
+            git add "$NIX_FILE"
             if ! git diff --cached --quiet; then
               git commit -m "Update lazykeys.nix for version ${{ env.VERSION }}"
               git push origin HEAD:main
@@ -125,4 +127,3 @@ jobs:
           else
             echo "lazykeys.nix not found. Skipping update."
           fi
-      
