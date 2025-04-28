@@ -84,10 +84,49 @@ jobs:
             git config --local user.email "action@github.com"
             git config --local user.name "GitHub Action"
             
-            # Commit and push changes
+            # Stage the changes
             git add $FORMULA_PATH
-            git commit -m "Update formula for version ${{ env.VERSION }}"
-            git push origin HEAD:main
+            
+            # Only commit and push if there are changes
+            if ! git diff --cached --quiet; then
+              git commit -m "Update formula for version ${{ env.VERSION }}"
+              git push origin HEAD:main
+            else
+              echo "No changes to commit."
+            fi
           else
             echo "Formula file not found at $FORMULA_PATH. Skipping formula update."
           fi
+
+
+      - name: Update lazykeys.nix
+        run: |
+          NIX_FILE=lazykeys.nix
+          if [ -f "$NIX_FILE" ]; then
+            # Update the version
+            sed -i '' "s|^\s*version = \".*\";|  version = \"${{ env.VERSION }}\";|" $NIX_FILE
+            
+            # Update the URL
+            sed -i '' "s|^\s*url = \".*\";|      url = \"https://github.com/${{ github.repository }}/releases/download/${{ env.VERSION }}/lazykeys.tar.gz\";|" $NIX_FILE
+            
+            # Update the SHA256
+            sed -i '' "s|^\s*hash = \".*\";|      hash = \"sha256-${{ env.SHA256 }}\";|" $NIX_FILE
+      
+            # Configure Git
+            git config --local user.email "action@github.com"
+            git config --local user.name "GitHub Action"
+      
+            # Stage the changes
+            git add $NIX_FILE
+            
+            # Only commit if there are changes
+            if ! git diff --cached --quiet; then
+              git commit -m "Update lazykeys.nix for version ${{ env.VERSION }}"
+              git push origin HEAD:main
+            else
+              echo "No changes to commit for lazykeys.nix."
+            fi
+          else
+            echo "lazykeys.nix not found. Skipping update."
+          fi
+      

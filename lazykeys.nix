@@ -5,10 +5,10 @@ let
 
 lazykeys = pkgs.stdenv.mkDerivation {
   pname = "lazykeys";
-  version = "local";
+  version = "0.0.1";
 
   src = pkgs.fetchurl {
-    url = "tps://github.com/frostplexx/LazyKeys/releases/download/v1.0.0/lazykeys";
+    url = "tps://github.com/frostplexx/LazyKeys/releases/download/v0.0.1/lazykeys.tar.gz ";
     hash = "sha256-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=";
   };
 
