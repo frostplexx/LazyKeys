@@ -133,11 +133,31 @@ class HyperKey {
         }
 
         if f18Down {
-            var mods: CGEventFlags = [
-                .maskCommand, .maskControl, .maskAlternate,
-            ]
-            if includeShift { mods.insert(.maskShift) }
-            event.flags = mods
+            // Get the current flags from the event
+            let currentFlags = event.flags
+            
+            // Create base hyper key modifiers (Command + Control + Option)
+            var hyperFlags: CGEventFlags = [.maskCommand, .maskControl, .maskAlternate]
+            
+            // Add shift by default if includeShift flag is set
+            if includeShift {
+                hyperFlags.insert(.maskShift)
+            }
+            
+            // Preserve any manually added modifiers that are already present in the event
+            // This allows additional Shift and other modifiers to be added manually
+            // even if includeShift is false
+            if !includeShift && currentFlags.contains(.maskShift) {
+                hyperFlags.insert(.maskShift)
+            }
+            
+            // Preserve any other potential modifiers
+            if currentFlags.contains(.maskSecondaryFn) {
+                hyperFlags.insert(.maskSecondaryFn)
+            }
+            
+            // Apply the combined flags to the event
+            event.flags = hyperFlags
             quickPressHandled = true
         }
         return Unmanaged.passUnretained(event)
@@ -158,5 +178,3 @@ class HyperKey {
         signal(SIGQUIT, handleSignal)
     }
 }
-
-

@@ -7,6 +7,8 @@ VERSION ?= dev-$(shell date -Idate)
 BIN_DIR = bin
 OUTPUT = $(BIN_DIR)/$(BIN_NAME)
 
+all: clean build
+
 $(BIN_DIR):
 	mkdir -p $(BIN_DIR)
 
