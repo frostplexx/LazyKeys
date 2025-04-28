@@ -70,7 +70,7 @@ jobs:
           draft: false
           prerelease: false
       
-      # Update Homebrew Formula (if it exists in the repo)
+
       - name: Update Homebrew Formula
         run: |
           FORMULA_PATH=Formula/LazyKeys.rb
@@ -80,24 +80,33 @@ jobs:
             sed -i '' "s|^  url .*|  url \"${TAR_URL}\"|" $FORMULA_PATH
             sed -i '' "s|^  sha256 .*|  sha256 \"${{ env.SHA256 }}\"|" $FORMULA_PATH
             
-            # Configure Git
+            # Configure Git for the remote repository
             git config --local user.email "action@github.com"
             git config --local user.name "GitHub Action"
-            
+      
+            # Set the correct remote to push changes
+            git remote set-url origin https://github.com/frostplexx/homebrew-tap.git
+      
+            # Fetch the latest changes to ensure we have the most up-to-date branch
+            git fetch origin main
+      
             # Stage the changes
             git add $FORMULA_PATH
-            
+      
             # Only commit and push if there are changes
             if ! git diff --cached --quiet; then
               git commit -m "Update formula for version ${{ env.VERSION }}"
-              git push origin HEAD:main
+              
+              # Push using the GITHUB_TOKEN for authentication
+              git push https://github.com/frostplexx/homebrew-tap.git HEAD:main
             else
               echo "No changes to commit."
             fi
           else
             echo "Formula file not found at $FORMULA_PATH. Skipping formula update."
           fi
-
+        env:
+          GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN }}
 
       - name: Install Nix
         uses: DeterminateSystems/nix-installer-action@main
