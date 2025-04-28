@@ -74,42 +74,38 @@ jobs:
       - name: Update Homebrew Formula
         run: |
           FORMULA_PATH=/tmp/homebrew-tap/Formula/LazyKeys.rb
-          if [ -f "$FORMULA_PATH" ]; then
-            # Clone the Homebrew Tap repository
-            git clone https://github.com/frostplexx/homebrew-tap.git /tmp/homebrew-tap
+          # Clone the Homebrew Tap repository
+          git clone https://github.com/frostplexx/homebrew-tap.git /tmp/homebrew-tap
       
-            # Navigate into the repository
-            cd /tmp/homebrew-tap
+          # Navigate into the repository
+          cd /tmp/homebrew-tap
       
-            # Fetch the latest changes to ensure we have the most up-to-date branch
-            git fetch origin main
+          # Fetch the latest changes to ensure we have the most up-to-date branch
+          git fetch origin main
+          
+          # Checkout to the main branch
+          git checkout main
+      
+          # Update the formula with the new version and URL
+          TAR_URL="https://github.com/${{ github.repository }}/releases/download/${{ env.VERSION }}/lazykeys.tar.gz"
+          sed -i '' "s|^  url .*|  url \"${TAR_URL}\"|" $FORMULA_PATH
+          sed -i '' "s|^  sha256 .*|  sha256 \"${{ env.SHA256 }}\"|" $FORMULA_PATH
+      
+          # Configure Git for the remote repository
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          
+          # Stage the changes
+          git add $FORMULA_PATH
+      
+          # Only commit and push if there are changes
+          if ! git diff --cached --quiet; then
+            git commit -m "Update formula for version ${{ env.VERSION }}"
             
-            # Checkout to the main branch
-            git checkout main
-      
-            # Update the formula with the new version and URL
-            TAR_URL="https://github.com/${{ github.repository }}/releases/download/${{ env.VERSION }}/lazykeys.tar.gz"
-            sed -i '' "s|^  url .*|  url \"${TAR_URL}\"|" $FORMULA_PATH
-            sed -i '' "s|^  sha256 .*|  sha256 \"${{ env.SHA256 }}\"|" $FORMULA_PATH
-      
-            # Configure Git for the remote repository
-            git config --local user.email "action@github.com"
-            git config --local user.name "GitHub Action"
-            
-            # Stage the changes
-            git add $FORMULA_PATH
-      
-            # Only commit and push if there are changes
-            if ! git diff --cached --quiet; then
-              git commit -m "Update formula for version ${{ env.VERSION }}"
-              
-              # Push using the GITHUB_TOKEN for authentication
-              git push https://github.com/frostplexx/homebrew-tap.git HEAD:main
-            else
-              echo "No changes to commit."
-            fi
+            # Push using the GITHUB_TOKEN for authentication
+            git push https://github.com/frostplexx/homebrew-tap.git HEAD:main
           else
-            echo "Formula file not found at $FORMULA_PATH. Skipping formula update."
+            echo "No changes to commit."
           fi
         env:
           GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN }}
