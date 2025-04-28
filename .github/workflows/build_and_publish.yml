@@ -99,6 +99,8 @@ jobs:
           fi
 
 
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@main
       - name: Update lazykeys.nix
         run: |
           NIX_FILE=lazykeys.nix
