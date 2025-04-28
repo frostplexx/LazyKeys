@@ -73,7 +73,7 @@ jobs:
 
       - name: Update Homebrew Formula
         run: |
-          FORMULA_PATH=Formula/LazyKeys.rb
+          FORMULA_PATH=/tmp/homebrew-tap/Formula/LazyKeys.rb
           if [ -f "$FORMULA_PATH" ]; then
             # Clone the Homebrew Tap repository
             git clone https://github.com/frostplexx/homebrew-tap.git /tmp/homebrew-tap
