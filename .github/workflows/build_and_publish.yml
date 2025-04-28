@@ -107,7 +107,7 @@ jobs:
           TARBALL=release/lazykeys.tar.gz
           if [ -f "$NIX_FILE" ]; then
             # Calculate the SRI sha256 hash
-            new_sha256=$(nix hash to-sri --type sha256 "$TARBALL")
+            new_sha256=$(nix hash to-sri --type sha256 "${{ env.SHA256 }}")
             
             # Update version, URL, and hash
             sed -i '' "s|^[[:space:]]*version = \".*\";|  version = \"${{ env.VERSION }}\";|" "$NIX_FILE"
