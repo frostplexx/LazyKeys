@@ -75,21 +75,27 @@ jobs:
         run: |
           FORMULA_PATH=Formula/LazyKeys.rb
           if [ -f "$FORMULA_PATH" ]; then
-            TAR_URL="https://github.com/${{ github.repository }}/releases/download/${{ env.VERSION }}/lazykeys.tar.gz"
-            # Update the formula with the new version and URL
-            sed -i '' "s|^  url .*|  url \"${TAR_URL}\"|" $FORMULA_PATH
-            sed -i '' "s|^  sha256 .*|  sha256 \"${{ env.SHA256 }}\"|" $FORMULA_PATH
-            
-            # Configure Git for the remote repository
-            git config --local user.email "action@github.com"
-            git config --local user.name "GitHub Action"
+            # Clone the Homebrew Tap repository
+            git clone https://github.com/frostplexx/homebrew-tap.git /tmp/homebrew-tap
       
-            # Set the correct remote to push changes
-            git remote set-url origin https://github.com/frostplexx/homebrew-tap.git
+            # Navigate into the repository
+            cd /tmp/homebrew-tap
       
             # Fetch the latest changes to ensure we have the most up-to-date branch
             git fetch origin main
+            
+            # Checkout to the main branch
+            git checkout main
       
+            # Update the formula with the new version and URL
+            TAR_URL="https://github.com/${{ github.repository }}/releases/download/${{ env.VERSION }}/lazykeys.tar.gz"
+            sed -i '' "s|^  url .*|  url \"${TAR_URL}\"|" $FORMULA_PATH
+            sed -i '' "s|^  sha256 .*|  sha256 \"${{ env.SHA256 }}\"|" $FORMULA_PATH
+      
+            # Configure Git for the remote repository
+            git config --local user.email "action@github.com"
+            git config --local user.name "GitHub Action"
+            
             # Stage the changes
             git add $FORMULA_PATH
       
@@ -138,3 +144,5 @@ jobs:
           else
             echo "lazykeys.nix not found. Skipping update."
           fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN }}
