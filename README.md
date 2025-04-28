@@ -44,6 +44,11 @@ services.lazykeys = {
 
 ## Usage
 
+<!-- prettier-ignore -->
+> :red_circle: **IMPORTANT**: **Restart lazykeys :exclamation:
+> After first start lazykeys will ask for Accessibility Permission!
+> After granting, you may need to **run `killall lazykeys` to restart it, otherwise it wont work 
+
 ### Basic Command
 ```bash
 lazykeys                     # Run with default settings
