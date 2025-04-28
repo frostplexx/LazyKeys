@@ -74,6 +74,12 @@ jobs:
       - name: Update Homebrew Formula
         run: |
           FORMULA_PATH=/tmp/homebrew-tap/Formula/LazyKeys.rb
+
+          # Configure Git for the remote repository
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+
+
           # Clone the Homebrew Tap repository
           git clone https://github.com/frostplexx/homebrew-tap.git /tmp/homebrew-tap
       
@@ -91,9 +97,6 @@ jobs:
           sed -i '' "s|^  url .*|  url \"${TAR_URL}\"|" $FORMULA_PATH
           sed -i '' "s|^  sha256 .*|  sha256 \"${{ env.SHA256 }}\"|" $FORMULA_PATH
       
-          # Configure Git for the remote repository
-          git config --local user.email "action@github.com"
-          git config --local user.name "GitHub Action"
           
           # Stage the changes
           git add $FORMULA_PATH
