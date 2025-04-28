@@ -12,10 +12,14 @@ lazykeys = pkgs.stdenv.mkDerivation {
       hash = "sha256-mMs7ONmJmm6Jc3u8u0BPn2d9WGh91m7LMJRc9Yl5Uhk=";
   };
 
+
+  # Unpack in the installation phase because its just a binary inside and no folder to cd into
+  dontUnpack = true;
+
   installPhase = ''
     runHook preInstall
     mkdir -p $out/bin
-    cp $src $out/bin/lazykeys
+    tar -xzf $src -C $out/bin 
     chmod +x $out/bin/lazykeys
     runHook postInstall
   '';
