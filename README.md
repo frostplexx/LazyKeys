@@ -14,7 +14,6 @@ LazyKeys is a lightweight utility for macOS that remaps capslock to **Command + 
 
 ### Via Homebrew
 ```bash
-# Add the tap and install in one go
 brew tap frostplexx/tap
 brew install lazykeys
 ```
