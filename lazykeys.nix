@@ -62,9 +62,9 @@ in {
       default = "hyperkey";
       description = ''
         Key mapping mode:
-        - hyperkey: Maps to Cmd+Ctrl+Alt (hyper key)
-        - escape: Activates Escape instead of Caplock on quick press
-        - custom: Activates a custom key specified by customKey instead of Caplock on quick press
+        - hyperkey: Maps to Cmd+Ctrl+Alt (hyper key) and quick press to Capslock
+        - escape: Activates Escape instead of Capslock on quick press
+        - custom: Activates a custom key specified by customKey instead of Capslock on quick press
       '';
     };
 
