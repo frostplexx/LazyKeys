@@ -25,7 +25,7 @@ lazykeys = pkgs.stdenv.mkDerivation {
   '';
 
   meta = with lib; {
-    description = "Remaps Caps Lock to useful keys (Hyper key, Escape, or custom keys)";
+    description = "Remaps Caps Lock to useful keys (Hyper key or custom keys)";
     license = licenses.mit;
     platforms = platforms.darwin;
   };
@@ -43,8 +43,7 @@ lazykeys = pkgs.stdenv.mkDerivation {
       ["${lazykeys}/bin/lazykeys"]
       ++ (if !cfg.normalQuickPress then ["--no-quick-press"] else [])
       ++ (if cfg.includeShift then ["--include-shift"] else [])
-      ++ (if cfg.mode == "escape" then ["--escape-mode"] 
-          else if cfg.mode == "custom" then ["--custom-key" cfg.customKey]
+      ++ (if cfg.mode == "custom" then ["--custom-key" cfg.customKey] 
           else []);
     RunAtLoad = true;
     KeepAlive = true;
@@ -58,12 +57,11 @@ in {
     enable = lib.mkEnableOption "lazykeys service that remaps Caps Lock to useful keys";
 
     mode = lib.mkOption {
-      type = lib.types.enum ["hyperkey" "escape" "custom"];
+      type = lib.types.enum ["hyperkey" "custom"];
       default = "hyperkey";
       description = ''
         Key mapping mode:
         - hyperkey: Maps to Cmd+Ctrl+Alt (hyper key) and quick press to Capslock
-        - escape: Activates Escape instead of Capslock on quick press
         - custom: Activates a custom key specified by customKey instead of Capslock on quick press
       '';
     };
@@ -84,7 +82,7 @@ in {
       description = ''
         If enabled, a quick press of the Caps Lock key will have special behavior:
         - In hyperkey mode: toggles Caps Lock state
-        - In escape/custom mode: sends the mapped key
+        - In custom mode: sends the mapped key
         If disabled, only hold-down behavior is active.
       '';
     };

@@ -17,6 +17,7 @@ version.h:
 	echo '#endif /* VERSION_H */' >> version.h
 
 build: version.h $(OUTPUT)
+	@echo ✅ Build successfully
 
 $(OUTPUT): $(SRC_FILES) | $(BIN_DIR)
 	xcrun swiftc -I. -import-objc-header version.h \

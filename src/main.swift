@@ -9,7 +9,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
         var normalQuickPress = true
         var includeShift = false
-        var keyMappingMode: KeyMappingMode = .hyperKey
+        var keyMappingMode: KeyMappingMode = .capslock
 
         if CommandLine.arguments.contains("--version") {
             print("LazyKeys version \(version)")
@@ -31,8 +31,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 normalQuickPress = false
             case "--include-shift":
                 includeShift = true
-            case "--escape-mode":
-                keyMappingMode = .escape
             case "--custom-key":
                 // Get the next argument as the key code
                 if i + 1 < CommandLine.arguments.count {
@@ -91,10 +89,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         
         Options:
           --version                Show version information
-          --help                   Show this help message
           --no-quick-press         Disable quick press functionality
           --include-shift          Include Shift in Hyper key (Cmd+Ctrl+Alt+Shift)
-          --escape-mode            Map Caps Lock to Escape key
           --custom-key <KEY>       Map Caps Lock to a custom key
         
         Key Mapping Modes:
@@ -104,7 +100,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         
         Examples:
           lazykeys                        # Hyper key with Caps Lock toggle on quick press
-          lazykeys --escape-mode          # Quick press sends Escape
+          lazykeys --custom-key escape    # Quick press sends Escape
           lazykeys --custom-key space     # Quick press sends Space
           lazykeys --custom-key return    # Quick press sends Return/Enter
           lazykeys --no-quick-press       # Only hold-down functionality, no quick press
