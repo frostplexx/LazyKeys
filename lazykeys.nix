@@ -25,7 +25,7 @@ lazykeys = pkgs.stdenv.mkDerivation {
   '';
 
   meta = with lib; {
-    description = "Remaps Caps Lock to a Hyper key";
+    description = "Remaps Caps Lock to useful keys (Hyper key, Escape, or custom keys)";
     license = licenses.mit;
     platforms = platforms.darwin;
   };
@@ -39,11 +39,13 @@ lazykeys = pkgs.stdenv.mkDerivation {
 };
 
   launchAgentConfig = {
-    ProgramArguments = [
-      "${lazykeys}/bin/lazykeys"
-    ]
-    ++ (if !cfg.normalQuickPress then ["--no-quick-press"] else [])
-    ++ (if cfg.includeShift then ["--include-shift"] else []);
+    ProgramArguments = 
+      ["${lazykeys}/bin/lazykeys"]
+      ++ (if !cfg.normalQuickPress then ["--no-quick-press"] else [])
+      ++ (if cfg.includeShift then ["--include-shift"] else [])
+      ++ (if cfg.mode == "escape" then ["--escape-mode"] 
+          else if cfg.mode == "custom" then ["--custom-key" cfg.customKey]
+          else []);
     RunAtLoad = true;
     KeepAlive = true;
     EnvironmentVariables = {
@@ -53,14 +55,37 @@ lazykeys = pkgs.stdenv.mkDerivation {
   };
 in {
   options.services.lazykeys = {
-    enable = lib.mkEnableOption "lazykeys service that remaps Caps Lock to a Hyper key";
+    enable = lib.mkEnableOption "lazykeys service that remaps Caps Lock to useful keys";
+
+    mode = lib.mkOption {
+      type = lib.types.enum ["hyperkey" "escape" "custom"];
+      default = "hyperkey";
+      description = ''
+        Key mapping mode:
+        - hyperkey: Maps to Cmd+Ctrl+Alt (hyper key)
+        - escape: Maps to Escape key  
+        - custom: Maps to a custom key specified by customKey
+      '';
+    };
+
+    customKey = lib.mkOption {
+      type = lib.types.str;
+      default = "escape";
+      description = ''
+        The key to map Caps Lock to when mode is "custom".
+        Supported values: space, return, enter, tab, delete, backspace, escape, esc,
+        f1-f12, up, down, left, right, home, end, pageup, pagedown, or numeric key codes (0-127).
+      '';
+    };
 
     normalQuickPress = lib.mkOption {
       type = lib.types.bool;
       default = true;
       description = ''
-        If enabled, a quick press of the Caps Lock key will send an Escape key.
-        If disabled, it will only act as the Hyper key.
+        If enabled, a quick press of the Caps Lock key will have special behavior:
+        - In hyperkey mode: toggles Caps Lock state
+        - In escape/custom mode: sends the mapped key
+        If disabled, only hold-down behavior is active.
       '';
     };
 
@@ -68,6 +93,7 @@ in {
       type = lib.types.bool;
       default = false;
       description = ''
+        Only applies to hyperkey mode.
         If enabled, the Hyper key will include the Shift modifier (Cmd+Ctrl+Opt+Shift).
         If disabled, it will only include Cmd+Ctrl+Opt.
       '';
@@ -77,5 +103,13 @@ in {
   config = lib.mkIf cfg.enable {
     environment.systemPackages = [ lazykeys ];
     launchd.user.agents.lazykeys.serviceConfig = launchAgentConfig;
+    
+    # Add validation for custom mode
+    assertions = [
+      {
+        assertion = cfg.mode != "custom" || cfg.customKey != "";
+        message = "services.lazykeys.customKey must be set when mode is 'custom'";
+      }
+    ];
   };
 }

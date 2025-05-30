@@ -2,6 +2,13 @@ import Carbon
 import Cocoa
 import Foundation
 
+// Enum for different key mapping modes
+enum KeyMappingMode {
+    case hyperKey
+    case escape
+    case custom(keyCode: UInt8)
+}
+
 // Global reference to HyperKey instance (to call methods from signal handlers)
 var hyperKeyInstance: HyperKey? = nil
 
@@ -18,14 +25,16 @@ class HyperKey {
     private var runLoopSource: CFRunLoopSource?
     private var normalQuickPress: Bool
     private var includeShift: Bool
+    private var keyMappingMode: KeyMappingMode
     private var lastKeyDown: Date?
     private var f18Down = false
     private var quickPressHandled = false
     private var capsLockManager = CapsLockManager()
 
-    init(normalQuickPress: Bool, includeShift: Bool) {
+    init(normalQuickPress: Bool, includeShift: Bool, keyMappingMode: KeyMappingMode = .hyperKey) {
         self.normalQuickPress = normalQuickPress
         self.includeShift = includeShift
+        self.keyMappingMode = keyMappingMode
         setupEventTap()
         mapCapsLockToF18()
         registerSignalHandlers()  // Register signal handlers
@@ -132,6 +141,18 @@ class HyperKey {
             }
         }
 
+        // Handle different key mapping modes
+        switch keyMappingMode {
+        case .hyperKey:
+            return handleHyperKeyMode(type: type, event: event)
+        case .escape:
+            return handleEscapeMode(type: type, event: event)
+        case .custom(let keyCode):
+            return handleCustomKeyMode(type: type, event: event, targetKeyCode: keyCode)
+        }
+    }
+    
+    private func handleHyperKeyMode(type: CGEventType, event: CGEvent) -> Unmanaged<CGEvent>? {
         if f18Down {
             // Get the current flags from the event
             let currentFlags = event.flags
@@ -162,12 +183,44 @@ class HyperKey {
         }
         return Unmanaged.passUnretained(event)
     }
+    
+    private func handleEscapeMode(type: CGEventType, event: CGEvent) -> Unmanaged<CGEvent>? {
+        // In escape mode, we don't modify other keys - just handle the quick press
+        return Unmanaged.passUnretained(event)
+    }
+    
+    private func handleCustomKeyMode(type: CGEventType, event: CGEvent, targetKeyCode: UInt8) -> Unmanaged<CGEvent>? {
+        // In custom key mode, we don't modify other keys - just handle the quick press
+        return Unmanaged.passUnretained(event)
+    }
 
     private func handleQuickPress() {
         guard normalQuickPress, let down = lastKeyDown else { return }
         if Date().timeIntervalSince(down) > 0.02 && !quickPressHandled {
-            capsLockManager.toggleState()
+            switch keyMappingMode {
+            case .hyperKey:
+                // Original behavior - toggle caps lock
+                capsLockManager.toggleState()
+            case .escape:
+                // Send escape key
+                sendKeyPress(keyCode: UInt8(kVK_Escape))
+            case .custom(let keyCode):
+                // Send custom key
+                sendKeyPress(keyCode: keyCode)
+            }
             quickPressHandled = true
+        }
+    }
+    
+    private func sendKeyPress(keyCode: UInt8) {
+        // Create and post key down event
+        if let keyDownEvent = CGEvent(keyboardEventSource: nil, virtualKey: CGKeyCode(keyCode), keyDown: true) {
+            keyDownEvent.post(tap: .cghidEventTap)
+        }
+        
+        // Create and post key up event
+        if let keyUpEvent = CGEvent(keyboardEventSource: nil, virtualKey: CGKeyCode(keyCode), keyDown: false) {
+            keyUpEvent.post(tap: .cghidEventTap)
         }
     }
 
