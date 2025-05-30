@@ -1,9 +1,7 @@
 BIN_NAME = lazykeys
 SRC_FILES = $(wildcard src/*.swift)
 LIBS = -framework Cocoa -framework Carbon -framework Foundation
-
 VERSION ?= dev-$(shell date -Idate)
-
 BIN_DIR = bin
 OUTPUT = $(BIN_DIR)/$(BIN_NAME)
 
@@ -23,6 +21,9 @@ build: version.h $(OUTPUT)
 $(OUTPUT): $(SRC_FILES) | $(BIN_DIR)
 	xcrun swiftc -I. -import-objc-header version.h \
 		-O \
+		-whole-module-optimization \
+		-Xcc -flto \
+		-Xlinker -dead_strip \
 		$(LIBS) \
 		$(SRC_FILES) \
 		-o $(OUTPUT)
