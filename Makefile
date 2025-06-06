@@ -1,23 +1,36 @@
+# Metadata
 BIN_NAME = lazykeys
-SRC_FILES = $(wildcard src/*.swift)
-LIBS = -framework Cocoa -framework Carbon -framework Foundation
 VERSION ?= dev-$(shell date -Idate)
+
+# Paths
+SRC_DIR = src
+SRC_FILES = $(wildcard $(SRC_DIR)/*.swift)
 BIN_DIR = bin
 OUTPUT = $(BIN_DIR)/$(BIN_NAME)
+APP_NAME = $(BIN_NAME).app
+APP_DIR = $(BIN_DIR)/$(APP_NAME)
+WRAPPER = $(APP_DIR)/Contents/MacOS/$(BIN_NAME)
 
-all: clean build
+# Libraries
+LIBS = -framework Cocoa -framework Carbon -framework Foundation
 
+# Default target
+all: release
+
+# Create output dir
 $(BIN_DIR):
 	mkdir -p $(BIN_DIR)
 
-version.h: 
-	echo '#ifndef VERSION_H' > version.h
-	echo '#define VERSION_H' >> version.h
-	echo '#define VERSION_STRING "$(VERSION)"' >> version.h
-	echo '#endif /* VERSION_H */' >> version.h
+# Version header
+version.h:
+	@echo '#ifndef VERSION_H' > version.h
+	@echo '#define VERSION_H' >> version.h
+	@echo '#define VERSION_STRING "$(VERSION)"' >> version.h
+	@echo '#endif /* VERSION_H */' >> version.h
 
+# Build (debug)
+build: SWIFT_FLAGS = -DDEBUG
 build: version.h $(OUTPUT)
-	@echo ✅ Build successfully
 
 $(OUTPUT): $(SRC_FILES) | $(BIN_DIR)
 	xcrun swiftc -I. -import-objc-header version.h \
@@ -25,14 +38,46 @@ $(OUTPUT): $(SRC_FILES) | $(BIN_DIR)
 		-whole-module-optimization \
 		-Xcc -flto \
 		-Xlinker -dead_strip \
+		$(SWIFT_FLAGS) \
 		$(LIBS) \
 		$(SRC_FILES) \
 		-o $(OUTPUT)
+	@echo ✅ Build successful: $(OUTPUT)
 
-# Clean build artifacts
+# Release build
+release: SWIFT_FLAGS =
+release: clean version.h $(OUTPUT)
+	@echo 🚀 Release build complete
+
+# Wrap binary into .app bundle
+wrap: build
+	@mkdir -p "$(APP_DIR)/Contents/MacOS"
+	@cp "$(OUTPUT)" "$(WRAPPER)"
+	@mkdir -p "$(APP_DIR)/Contents"
+	@echo '<?xml version="1.0" encoding="UTF-8"?>' > "$(APP_DIR)/Contents/Info.plist"
+	@echo '<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">' >> "$(APP_DIR)/Contents/Info.plist"
+	@echo '<plist version="1.0">' >> "$(APP_DIR)/Contents/Info.plist"
+	@echo '<dict>' >> "$(APP_DIR)/Contents/Info.plist"
+	@echo '  <key>CFBundleName</key><string>LazyKeys</string>' >> "$(APP_DIR)/Contents/Info.plist"
+	@echo '  <key>CFBundleIdentifier</key><string>com.example.lazykeys</string>' >> "$(APP_DIR)/Contents/Info.plist"
+	@echo '  <key>CFBundleVersion</key><string>$(VERSION)</string>' >> "$(APP_DIR)/Contents/Info.plist"
+	@echo '  <key>CFBundleExecutable</key><string>$(BIN_NAME)</string>' >> "$(APP_DIR)/Contents/Info.plist"
+	@echo '  <key>LSUIElement</key><true/>' >> "$(APP_DIR)/Contents/Info.plist"
+	@echo '</dict>' >> "$(APP_DIR)/Contents/Info.plist"
+	@echo '</plist>' >> "$(APP_DIR)/Contents/Info.plist"
+	@echo 📦 App bundle created at: $(APP_DIR)
+
+# Run the .app bundle in debug mode
+run: wrap
+	open "$(APP_DIR)"
+	@echo "📣 Logging to /tmp/lazykeys.log"
+	tail -f /tmp/lazykeys.log
+
+# Clean all build artifacts
 clean:
 	rm -rf $(BIN_DIR) version.h
 
-# Install the binary (optional)
-install: build
-	cp $(OUTPUT) /usr/local/bin/$(BIN_NAME)
+# Install binary to /usr/local/bin
+install: release
+	cp "$(OUTPUT)" /usr/local/bin/$(BIN_NAME)
+	@echo 🛠️ Installed to /usr/local/bin/$(BIN_NAME)
