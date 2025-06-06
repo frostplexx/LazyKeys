@@ -9,10 +9,6 @@
 
 LazyKeys is a lightweight utility for macOS that remaps Caps Lock to more useful keys. It supports multiple mapping modes:
 
-- **Hyper Key Mode** (default): Remaps Caps Lock to **Command + Option + Control** (the hyper key)
-- **Escape Mode**: Maps Caps Lock to the Escape key
-- **Custom Key Mode**: Maps Caps Lock to any key you specify
-
 ## Features
 
 - 🎯 **Multiple Key Mapping Modes**: Hyper key, Escape, or any custom key
