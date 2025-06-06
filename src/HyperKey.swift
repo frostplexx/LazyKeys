@@ -9,16 +9,17 @@ enum KeyMappingMode {
 }
 
 // Global reference to HyperKey instance (to call methods from signal handlers)
-var hyperKeyInstance: HyperKey? = nil
+var hyperKeyInstance: HyperKey?
 
 // C function to handle signals
-func handleSignal(_ signal: Int32) {
+func handleSignal(_: Int32) {
     // Call the reset function on the HyperKey instance
     hyperKeyInstance?.resetKeyMapping()
-    exit(0)  // Exit after resetting key mappings
+    exit(0) // Exit after resetting key mappings
 }
 
 // MARK: - HyperKey Class
+
 class HyperKey {
     private var eventTap: CFMachPort?
     private var runLoopSource: CFRunLoopSource?
@@ -36,7 +37,7 @@ class HyperKey {
         self.keyMappingMode = keyMappingMode
         setupEventTap()
         mapCapsLockToF18()
-        registerSignalHandlers()  // Register signal handlers
+        registerSignalHandlers() // Register signal handlers
     }
 
     deinit {
@@ -53,7 +54,7 @@ class HyperKey {
             [
                 "HIDKeyboardModifierMappingSrc": 0x7_0000_0039,
                 "HIDKeyboardModifierMappingDst": 0x7_0000_006D,
-            ]
+            ],
         ]
         executeHidutil(payload: ["UserKeyMapping": mapping])
     }
@@ -69,7 +70,7 @@ class HyperKey {
                 options: []
             ),
             let json = String(data: data, encoding: .utf8)
-            else { return }
+        else { return }
         let proc = Process()
         proc.executableURL = URL(fileURLWithPath: "/usr/bin/hidutil")
         proc.arguments = ["property", "--set", json]
@@ -81,9 +82,9 @@ class HyperKey {
 
     private func setupEventTap() {
         let mask =
-        (1 << CGEventType.keyDown.rawValue)
-        | (1 << CGEventType.keyUp.rawValue)
-        | (1 << CGEventType.flagsChanged.rawValue)
+            (1 << CGEventType.keyDown.rawValue)
+                | (1 << CGEventType.keyUp.rawValue)
+                | (1 << CGEventType.flagsChanged.rawValue)
 
         guard
             let tap = CGEvent.tapCreate(
@@ -91,7 +92,7 @@ class HyperKey {
                 place: .headInsertEventTap,
                 options: .defaultTap,
                 eventsOfInterest: CGEventMask(mask),
-                callback: { (proxy, type, event, ref) in
+                callback: { proxy, type, event, ref in
                     let obj = Unmanaged<HyperKey>.fromOpaque(ref!)
                         .takeUnretainedValue()
                     return obj.handleEvent(
@@ -104,7 +105,7 @@ class HyperKey {
                     Unmanaged.passUnretained(self).toOpaque()
                 )
             )
-            else {
+        else {
             NSLog(
                 "Failed to create event tap; enable Accessibility permissions."
             )
@@ -121,7 +122,7 @@ class HyperKey {
     }
 
     private func handleEvent(
-        proxy: CGEventTapProxy?,
+        proxy _: CGEventTapProxy?,
         type: CGEventType,
         event: CGEvent
     ) -> Unmanaged<CGEvent>? {
@@ -148,7 +149,7 @@ class HyperKey {
         return Unmanaged.passUnretained(event)
     }
 
-    private func handleHyperKeyModifiers(type: CGEventType, event: CGEvent) -> Unmanaged<CGEvent>? {
+    private func handleHyperKeyModifiers(type _: CGEventType, event: CGEvent) -> Unmanaged<CGEvent>? {
         // Only modify non-F18 key events
         let code = UInt8(event.getIntegerValueField(.keyboardEventKeycode))
         if code != UInt8(kVK_F18) {
@@ -183,7 +184,6 @@ class HyperKey {
         return Unmanaged.passUnretained(event)
     }
 
-
     private func handleQuickPress() {
         guard normalQuickPress else { return }
 
@@ -193,7 +193,7 @@ class HyperKey {
             case .capslock:
                 // Original behavior - toggle caps lock
                 capsLockManager.toggleState()
-            case .custom(let keyCode):
+            case let .custom(keyCode):
                 // Send custom key
                 sendKeyPress(keyCode: keyCode)
             }

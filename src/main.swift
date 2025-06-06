@@ -1,12 +1,13 @@
-import Cocoa
 import Carbon
+import Cocoa
 
 class AppDelegate: NSObject, NSApplicationDelegate {
     private var hyperKey: HyperKey?
     private var statusItem: NSStatusItem?
+    private var permissionTimer: Timer?
     let version = String(cString: VERSION_STRING)
 
-    func applicationDidFinishLaunching(_ notification: Notification) {
+    func applicationDidFinishLaunching(_: Notification) {
         var normalQuickPress = true
         var includeShift = false
         var keyMappingMode: KeyMappingMode = .capslock
@@ -15,7 +16,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             print("LazyKeys version \(version)")
             exit(0)
         }
-        
+
         if CommandLine.arguments.contains("--help") {
             printHelp()
             exit(0)
@@ -25,7 +26,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         var i = 1
         while i < CommandLine.arguments.count {
             let arg = CommandLine.arguments[i]
-            
+
             switch arg {
             case "--no-quick-press":
                 normalQuickPress = false
@@ -58,46 +59,92 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             i += 1
         }
 
-        let options =
-            [kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String: true]
-            as CFDictionary
-        if !AXIsProcessTrustedWithOptions(options) {
-            NSLog("Enable Accessibility in System Settings → Privacy → Accessibility")
+        // Check accessibility permissions and wait if needed
+        checkAndWaitForAccessibilityPermissions { [weak self] in
+            guard let self = self else { return }
+
+            // Permissions granted, initialize the app
+            self.hyperKey = HyperKey(normalQuickPress: normalQuickPress, includeShift: includeShift, keyMappingMode: keyMappingMode)
+            hyperKeyInstance = self.hyperKey
+
+            // Send success notification
+            // self.sendSuccessNotification()
+
+            NotificationCenter.default.addObserver(self,
+                                                   selector: #selector(self.applicationWillTerminate(_:)),
+                                                   name: NSApplication.willTerminateNotification,
+                                                   object: nil)
         }
-
-        hyperKey = HyperKey(normalQuickPress: normalQuickPress, includeShift: includeShift, keyMappingMode: keyMappingMode)
-        hyperKeyInstance = hyperKey  // Set global reference to the instance
-
-        NotificationCenter.default.addObserver(self,
-                                               selector: #selector(applicationWillTerminate(_:)),
-                                               name: NSApplication.willTerminateNotification,
-                                               object: nil)
     }
 
-    @objc func applicationWillTerminate(_ notification: Notification) {
+    @objc func applicationWillTerminate(_: Notification) {
         let proc = Process()
         proc.executableURL = URL(fileURLWithPath: "/usr/bin/hidutil")
         proc.arguments = ["property", "--set", "{\"UserKeyMapping\":[]}"]
         try? proc.run()
     }
-    
+
+    private func checkAndWaitForAccessibilityPermissions(completion: @escaping () -> Void) {
+        if AXIsProcessTrusted() {
+            // Already have permissions, proceed immediately
+            completion()
+            return
+        }
+
+        // Don't have permissions, request them and start monitoring
+        print("LazyKeys requires Accessibility permissions to function.")
+        print("Please grant permission in System Settings → Privacy & Security → Accessibility")
+
+        let options = [kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String: true] as CFDictionary
+        AXIsProcessTrustedWithOptions(options)
+
+        // Flag to ensure completion is only called once
+        var completionCalled = false
+
+        let callCompletionOnce = {
+            guard !completionCalled else { return }
+            completionCalled = true
+
+            self.permissionTimer?.invalidate()
+            self.permissionTimer = nil
+            print("Accessibility permissions granted! Initializing LazyKeys...")
+
+            // Small delay to ensure system is ready
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                completion()
+            }
+        }
+
+        // Start timer to check for permissions every 2 seconds
+        permissionTimer = Timer.scheduledTimer(withTimeInterval: 2.0, repeats: true) { [weak self] timer in
+            guard let self = self else {
+                timer.invalidate()
+                return
+            }
+
+            if AXIsProcessTrusted() {
+                callCompletionOnce()
+            }
+        }
+    }
+
     private func printHelp() {
         print("""
         LazyKeys - Remap Caps Lock to useful keys
-        
+
         Usage: lazykeys [OPTIONS]
-        
+
         Options:
           --version                Show version information
           --no-quick-press         Disable quick press functionality
           --include-shift          Include Shift in Hyper key (Cmd+Ctrl+Alt+Shift)
           --custom-key <KEY>       Map Caps Lock to a custom key
-        
+
         Key Mapping Modes:
           Default: Hyper Key mode (Cmd+Ctrl+Alt)
           --escape-mode: Quick press sends Escape
           --custom-key: Quick press sends specified key
-        
+
         Examples:
           lazykeys                        # Hyper key with Caps Lock toggle on quick press
           lazykeys --custom-key escape    # Quick press sends Escape
@@ -107,10 +154,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         """)
         printKeyCodeHelp()
     }
-    
+
     private func printKeyCodeHelp() {
         print("""
-        
+
         Supported key names for --custom-key:
           space, return, enter, tab, delete, backspace, escape, esc
           f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12
@@ -119,10 +166,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
           Or use numeric key codes (0-127)
         """)
     }
-    
+
     private func parseKeyCode(_ keyString: String) -> UInt8? {
         let lowercased = keyString.lowercased()
-        
+
         // Handle named keys
         switch lowercased {
         case "space":
@@ -188,9 +235,43 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 }
 
 func main() {
+    #if DEBUG
+        setupDebugLogging()
+    #endif
+
     let delegate = AppDelegate()
     NSApplication.shared.delegate = delegate
     NSApplication.shared.run()
 }
+
+#if DEBUG
+    func setupDebugLogging() {
+        let logPath = "/tmp/lazykeys.log"
+
+        // Ensure the log file exists
+        if !FileManager.default.fileExists(atPath: logPath) {
+            FileManager.default.createFile(atPath: logPath, contents: nil, attributes: nil)
+        }
+
+        // Redirect stdout
+        if freopen(logPath, "a", stdout) == nil {
+            NSLog("❌ Failed to redirect stdout to \(logPath)")
+        }
+
+        // Redirect stderr
+        if freopen(logPath, "a", stderr) == nil {
+            NSLog("❌ Failed to redirect stderr to \(logPath)")
+        }
+
+        // Disable buffering for immediate output
+        setbuf(stdout, nil)
+        setbuf(stderr, nil)
+
+        // Log successful setup
+        print("✅ LazyKeys (DEBUG) logging to \(logPath)")
+        print(String(repeating: "=", count: 50))
+        fflush(stdout)
+    }
+#endif
 
 main()

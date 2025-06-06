@@ -47,7 +47,7 @@ jobs:
       # Build the app using Make with the version passed as a compile-time variable
       - name: Build the app with Make
         run: |
-          make VERSION="${{ env.VERSION }}" build
+          make VERSION="${{ env.VERSION }}" release
       
       # Create a tarball for the release
       - name: Create tarball
