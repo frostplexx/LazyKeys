@@ -67,11 +67,10 @@ lazykeys --help
 lazykeys                     # Default: Caps Lock → Hyper Key (Cmd+Ctrl+Alt)
 lazykeys --include-shift     # Hyper Key includes Shift (Cmd+Ctrl+Alt+Shift)
 
-# Escape mode
-lazykeys --escape-mode       # Quick press → Escape key
 
 # Custom key mode
 lazykeys --custom-key space     # Quick press → Space
+lazykeys --custom-key escape    # Quick press → Escape
 lazykeys --custom-key return    # Quick press → Return/Enter
 lazykeys --custom-key f1        # Quick press → F1
 lazykeys --custom-key 53        # Quick press → Key code 53 (Escape)
