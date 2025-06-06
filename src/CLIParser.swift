@@ -1,5 +1,6 @@
 import Carbon
 import Foundation
+import os.log
 
 struct CLIOptions {
     let normalQuickPress: Bool
@@ -9,6 +10,7 @@ struct CLIOptions {
 
 class CLIParser {
     private let version = String(cString: VERSION_STRING)
+    private let logger = Logger(subsystem: "com.frostplexx.lazykeys", category: "Startup")
 
     func parseArguments() -> CLIOptions? {
         var normalQuickPress = true
@@ -17,6 +19,7 @@ class CLIParser {
 
         if CommandLine.arguments.contains("--version") {
             print("LazyKeys version \(version)")
+            logger.info("LazyKeys version \(self.version)")
             exit(0)
         }
 
@@ -44,17 +47,20 @@ class CLIParser {
                         keyMappingMode = .custom(keyCode: keyCode)
                     } else {
                         print("Error: Invalid key code '\(keyCodeString)'")
+                        logger.error("Error: Invalid key code '\(keyCodeString)'")
                         printKeyCodeHelp()
                         exit(1)
                     }
                 } else {
                     print("Error: --custom-key requires a key code argument")
+                    logger.error("Error: --custom-key requires a key code argument")
                     printKeyCodeHelp()
                     exit(1)
                 }
             default:
                 if arg.hasPrefix("-") {
                     print("Error: Unknown option '\(arg)'")
+                    logger.error("Error: Unknown option '\(arg)'")
                     printHelp()
                     exit(1)
                 }

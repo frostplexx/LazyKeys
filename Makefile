@@ -68,14 +68,14 @@ wrap: build
 	@echo 📦 App bundle created at: $(APP_DIR)
 
 # Run the .app bundle in debug mode
-run: wrap
+run: clean wrap
 	open "$(APP_DIR)"
-	@echo "📣 Logging to /tmp/lazykeys.log"
-	tail -f /tmp/lazykeys.log
+	log stream --predicate 'subsystem == "com.frostplexx.lazykeys"'
 
 # Clean all build artifacts
 clean:
-	rm -rf $(BIN_DIR) version.h
+	@echo "🗑️ Cleaning up build files"
+	@rm -rf $(BIN_DIR) version.h
 
 # Install binary to /usr/local/bin
 install: release

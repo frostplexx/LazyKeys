@@ -7,16 +7,18 @@
 // Source: https://github.com/gkpln3/CapsLockNoDelay/blob/main/CapsLockNoDelay/CapsLockManager.swift
 
 import Foundation
+import os.log
 
 class CapsLockManager: Toggleable {
     var currentState = false
+    private let logger = Logger(subsystem: "com.frostplexx.lazykeys", category: "Startup")
 
     init() {
         currentState = Self.getCapsLockState()
     }
 
     public func toggleState() {
-        print("setting state \(!currentState)")
+        logger.info("setting state \(!self.currentState)")
         setCapsLockState(!currentState)
     }
 

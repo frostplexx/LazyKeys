@@ -1,14 +1,16 @@
 import Carbon
 import Cocoa
+import os.log
 
 class AppDelegate: NSObject, NSApplicationDelegate {
     private var hyperKey: HyperKey?
     private var statusItem: NSStatusItem?
     private var permissionTimer: Timer?
     private let cliParser = CLIParser()
+    private let logger = Logger(subsystem: "com.frostplexx.lazykeys", category: "Startup")
+
 
     func applicationDidFinishLaunching(_: Notification) {
-        print("📝 LazyKeys started at \(Date())")
 
         // Parse CLI arguments
         guard let options = cliParser.parseArguments() else {
@@ -27,7 +29,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             )
             hyperKeyInstance = self.hyperKey
 
-            print("🚀 LazyKeys initialized successfully!")
+            self.logger.info("🚀 LazyKeys initialized successfully!")
 
             NotificationCenter.default.addObserver(
                 self,
@@ -39,7 +41,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     @objc func applicationWillTerminate(_: Notification) {
-        print("🛑 LazyKeys terminating...")
+        self.logger.info("🛑 LazyKeys terminating...")
         let proc = Process()
         proc.executableURL = URL(fileURLWithPath: "/usr/bin/hidutil")
         proc.arguments = ["property", "--set", "{\"UserKeyMapping\":[]}"]
@@ -49,14 +51,14 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     private func checkAndWaitForAccessibilityPermissions(completion: @escaping () -> Void) {
         if AXIsProcessTrusted() {
             // Already have permissions, proceed immediately
-            print("✅ Accessibility permissions already granted")
+            self.logger.info("✅ Accessibility permissions already granted")
             completion()
             return
         }
 
         // Don't have permissions, request them and start monitoring
-        print("⚠️  LazyKeys requires Accessibility permissions to function.")
-        print("📍 Please grant permission in System Settings → Privacy & Security → Accessibility")
+        self.logger.info("⚠️  LazyKeys requires Accessibility permissions to function.")
+        self.logger.info("📍 Please grant permission in System Settings → Privacy & Security → Accessibility")
 
         let options = [kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String: true] as CFDictionary
         AXIsProcessTrustedWithOptions(options)
@@ -70,7 +72,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
             self.permissionTimer?.invalidate()
             self.permissionTimer = nil
-            print("✅ Accessibility permissions granted! Initializing LazyKeys...")
+            self.logger.info("✅ Accessibility permissions granted! Initializing LazyKeys...")
 
             // Small delay to ensure system is ready
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
@@ -88,50 +90,17 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             if AXIsProcessTrusted() {
                 callCompletionOnce()
             } else {
-                print("⏳ Still waiting for accessibility permissions...")
+                self.logger.info("⏳ Still waiting for accessibility permissions...")
             }
         }
     }
 }
 
 func main() {
-    #if DEBUG
-        setupDebugLogging()
-    #endif
-
     let delegate = AppDelegate()
     NSApplication.shared.delegate = delegate
     NSApplication.shared.run()
 }
 
-#if DEBUG
-    func setupDebugLogging() {
-        let logPath = "/tmp/lazykeys.log"
-
-        // Ensure the log file exists
-        if !FileManager.default.fileExists(atPath: logPath) {
-            FileManager.default.createFile(atPath: logPath, contents: nil, attributes: nil)
-        }
-
-        // Redirect stdout
-        if freopen(logPath, "a", stdout) == nil {
-            NSLog("❌ Failed to redirect stdout to \(logPath)")
-        }
-
-        // Redirect stderr
-        if freopen(logPath, "a", stderr) == nil {
-            NSLog("❌ Failed to redirect stderr to \(logPath)")
-        }
-
-        // Disable buffering for immediate output
-        setbuf(stdout, nil)
-        setbuf(stderr, nil)
-
-        // Log successful setup
-        print("✅ LazyKeys (DEBUG) logging to \(logPath)")
-        print(String(repeating: "=", count: 50))
-        fflush(stdout)
-    }
-#endif
 
 main()
