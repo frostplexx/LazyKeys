@@ -57,11 +57,6 @@ services.lazykeys = {
 
 ## Usage
 
-<!-- prettier-ignore -->
-> :red_circle: **IMPORTANT**: **Restart lazykeys** :exclamation:
-> After first start lazykeys will ask for Accessibility Permission!
-> After granting, you may need to **run `killall lazykeys` to restart it, otherwise it won't work 
-
 ### Command Line Options
 
 ```bash
@@ -88,17 +83,13 @@ lazykeys --version           # Show version information
 
 ### Key Mapping Modes
 
-#### 1. Hyper Key Mode (Default)
+#### Default
 - **Hold Caps Lock**: Acts as Cmd+Ctrl+Alt (+ Shift if `--include-shift`)
 - **Quick Press**: Toggles Caps Lock state (if `--no-quick-press` not used)
 
-#### 2. Escape Mode (`--escape-mode`)
-- **Quick Press**: Sends Escape key
-- **Hold**: No special behavior
-
-#### 3. Custom Key Mode (`--custom-key <KEY>`)
+#### Custom Key Mode (`--custom-key <KEY>`)
 - **Quick Press**: Sends the specified key
-- **Hold**: No special behavior
+- **Hold**: Acts as Cmd+Ctrl+Alt
 
 ### Supported Key Names
 
@@ -190,7 +181,7 @@ launchctl unload ~/Library/LaunchAgents/com.lazykeys.plist
 ### Accessibility Permissions
 1. Go to **System Settings** → **Privacy & Security** → **Accessibility**
 2. Add LazyKeys to the list and enable it
-3. Restart LazyKeys: `killall lazykeys && lazykeys`
+3. Restart LazyKeys by killing the process: `killall lazykeys`
 
 ### Key Mapping Not Working
 - Ensure you've granted Accessibility permissions
