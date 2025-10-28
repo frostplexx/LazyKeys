@@ -1,54 +1,67 @@
-{ config, lib, pkgs, ... }:
-
-let
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}: let
   cfg = config.services.lazykeys;
 
-lazykeys = pkgs.stdenv.mkDerivation {
-  pname = "lazykeys";
-  version = "v1.1.2";
+  lazykeys = pkgs.stdenv.mkDerivation {
+    pname = "lazykeys";
+    version = "v1.1.2";
 
-  src = pkgs.fetchurl {
+    src = pkgs.fetchurl {
       url = "https://github.com/frostplexx/LazyKeys/releases/download/v1.1.2/lazykeys.tar.gz";
       hash = "sha256-zQL/d0g0q1e4zaWVCMoDk2Rc3NQQAlu0YY/dsEM3nNo=";
+    };
+
+    # Unpack in the installation phase because its just a binary inside and no folder to cd into
+    dontUnpack = true;
+
+    installPhase = ''
+      runHook preInstall
+      mkdir -p $out/bin
+      tar -xzf $src -C $out/bin
+      chmod +x $out/bin/lazykeys
+      runHook postInstall
+    '';
+
+    meta = with lib; {
+      description = "Remaps Caps Lock to useful keys (Hyper key or custom keys)";
+      license = licenses.mit;
+      platforms = platforms.darwin;
+    };
+
+    __darwinAllowLocalNetworking = true;
+
+    postInstall = ''
+      echo "NOTE: lazykeys requires accessibility permissions."
+      echo "      Please grant them in System Settings → Privacy & Security → Accessibility."
+    '';
   };
-
-
-  # Unpack in the installation phase because its just a binary inside and no folder to cd into
-  dontUnpack = true;
-
-  installPhase = ''
-    runHook preInstall
-    mkdir -p $out/bin
-    tar -xzf $src -C $out/bin 
-    chmod +x $out/bin/lazykeys
-    runHook postInstall
-  '';
-
-  meta = with lib; {
-    description = "Remaps Caps Lock to useful keys (Hyper key or custom keys)";
-    license = licenses.mit;
-    platforms = platforms.darwin;
-  };
-
-  __darwinAllowLocalNetworking = true;
-
-  postInstall = ''
-    echo "NOTE: lazykeys requires accessibility permissions."
-    echo "      Please grant them in System Settings → Privacy & Security → Accessibility."
-  '';
-};
 
   launchAgentConfig = {
-    ProgramArguments = 
+    ProgramArguments =
       ["${lazykeys}/bin/lazykeys"]
-      ++ (if !cfg.normalQuickPress then ["--no-quick-press"] else [])
-      ++ (if cfg.includeShift then ["--include-shift"] else [])
-      ++ (if cfg.mode == "custom" then ["--custom-key" cfg.customKey] 
-          else []);
+      ++ (
+        if !cfg.normalQuickPress
+        then ["--no-quick-press"]
+        else []
+      )
+      ++ (
+        if cfg.includeShift
+        then ["--include-shift"]
+        else []
+      )
+      ++ (
+        if cfg.mode == "custom"
+        then ["--custom-key" cfg.customKey]
+        else []
+      );
     RunAtLoad = true;
     KeepAlive = true;
     EnvironmentVariables = {
-        PATH = "/run/current-system/sw/bin:/usr/bin:/bin:/usr/sbin:/sbin";
+      PATH = "/run/current-system/sw/bin:/usr/bin:/bin:/usr/sbin:/sbin";
     };
     SessionCreate = true;
   };
@@ -99,9 +112,9 @@ in {
   };
 
   config = lib.mkIf cfg.enable {
-    environment.systemPackages = [ lazykeys ];
+    environment.systemPackages = [lazykeys];
     launchd.user.agents.lazykeys.serviceConfig = launchAgentConfig;
-    
+
     # Add validation for custom mode
     assertions = [
       {
