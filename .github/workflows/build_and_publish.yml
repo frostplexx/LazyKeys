@@ -23,7 +23,7 @@ jobs:
       
       # Set up Swift environment
       - name: Set up Swift
-        uses: fwal/setup-swift@v2
+        uses: fwal/setup-swift@v3
         with:
           swift-version: '5.7'
       
